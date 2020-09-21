@@ -1,6 +1,6 @@
 {
   "name": "hyperf-plus/permission",
-  "description": "开箱即用的Hyperf permission扩展",
+  "description": "hyperf-plus-admin可选的权限插件,也可以用自己的permission组件",
   "license": "MIT",
   "authors": [
     {
