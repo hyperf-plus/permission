@@ -1,19 +1,23 @@
 <?php
-declare(strict_types=1);
 
+declare(strict_types=1);
+/**
+ * This file is part of Hyperf.plus
+ *
+ * @link     https://www.hyperf.plus
+ * @document https://doc.hyperf.plus
+ * @contact  4213509@qq.com
+ * @license  https://github.com/hyperf/hyperf-plus/blob/master/LICENSE
+ */
 namespace HPlus\Permission\Middleware;
 
 use HPlus\Permission\Contracts\PermissionInterface;
-use Hyperf\Di\Annotation\Inject;
-use Hyperf\Utils\Context;
+use HPlus\Permission\Exception\PermissionException;
 use Hyperf\HttpServer\Router\Dispatched;
-use Mzh\Helper\RunTimes;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Qbhy\HyperfAuth\Annotation\Auth;
-use HPlus\Permission\Exception\PermissionException;
 
 class PermissionMiddleware implements MiddlewareInterface
 {
@@ -32,11 +36,11 @@ class PermissionMiddleware implements MiddlewareInterface
     {
         /** @var Dispatched $router */
         $router = $request->getAttribute(Dispatched::class);
-        if (!$router->isFound()) {
+        if (! $router->isFound()) {
             throw new NotFoundException('接口不存在');
         }
         $has = $this->permission->can($request->getMethod(), $router->handler->route);
-        if (!$has) {
+        if (! $has) {
             throw new PermissionException(401, '您无权限');
         }
         return $handler->handle($request);
