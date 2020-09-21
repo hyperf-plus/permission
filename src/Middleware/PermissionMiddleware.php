@@ -18,20 +18,6 @@ use HPlus\Permission\Exception\PermissionException;
 class PermissionMiddleware implements MiddlewareInterface
 {
     /**
-     * @var ContainerInterface
-     */
-    protected $container;
-
-    /**
-     * @var RequestInterface
-     */
-    protected $request;
-
-    /**
-     * @var HttpResponse
-     */
-    protected $response;
-    /**
      * @var Permission
      */
     protected $permission;
