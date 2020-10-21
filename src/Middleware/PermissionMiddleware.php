@@ -13,6 +13,7 @@ namespace HPlus\Permission\Middleware;
 
 use HPlus\Permission\Contracts\PermissionInterface;
 use HPlus\Permission\Exception\PermissionException;
+use HPlus\Permission\Permission;
 use Hyperf\HttpServer\Router\Dispatched;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

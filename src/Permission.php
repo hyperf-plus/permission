@@ -9,12 +9,14 @@ declare(strict_types=1);
  * @contact  4213509@qq.com
  * @license  https://github.com/hyperf/hyperf-plus/blob/master/LICENSE
  */
+
 namespace HPlus\Permission;
 
 use HPlus\Permission\Contracts\PermissionInterface;
 use HPlus\Permission\Model\Admin\UserPermission;
 use HPlus\Route\Annotation\AdminController;
 use HPlus\Route\Annotation\ApiController;
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\HttpServer\Annotation\Mapping;
 use Hyperf\HttpServer\Router\DispatcherFactory;
@@ -41,11 +43,14 @@ class Permission implements PermissionInterface
 
     private $userOpen = [];
 
-    private $auth;
+    /**
+     * @var \Qbhy\HyperfAuth\AuthGuard
+     */
+    private $guard;
 
-    public function __construct(AuthManager $auth, CacheInterface $cache)
+    public function __construct(AuthManager $auth, CacheInterface $cache, ConfigInterface $config)
     {
-        $this->auth = $auth;
+        $this->guard = $auth->guard($config->get('admin.auth.guard', 'jwt'));
         $this->cache = $cache;
         $this->scanPermission();
     }
@@ -63,7 +68,7 @@ class Permission implements PermissionInterface
             return true;
         }
         #判断该资源是否对登录用户开放
-        if ($this->auth->check() && $this->isUserOpen($url)) {
+        if ($this->guard->check() && $this->isUserOpen($url)) {
             return true;
         }
         #先检测自身权限
@@ -75,7 +80,7 @@ class Permission implements PermissionInterface
         $roles = $this->getUserRoles();
         $allPermission = [];
         foreach ($roles as $slug) {
-            if (! isset($this->authNode[$slug])) {
+            if (!isset($this->authNode[$slug])) {
                 continue;
             }
             if ($this->hasPermission($method, $route, $this->authNode[$slug])) {
@@ -118,18 +123,18 @@ class Permission implements PermissionInterface
     {
         $allRoles = $this->cache->get($this->getRoleKey($userId));
         if ($allRoles !== null) {
-            return (array) $allRoles;
+            return (array)$allRoles;
         }
         #取用户角色id
         if ($userId == null) {
-            $user = $this->auth->user();
+            $user = $this->guard->user();
         } else {
             $userModel = config('admin.database.users_model');
             $user = $userModel::query()->find($userId);
         }
         $allRoles = $user->roles()->pluck('slug')->toArray();
         $this->cache->set($this->getRoleKey($userId), $allRoles);
-        return (array) $allRoles;
+        return (array)$allRoles;
     }
 
     /**
@@ -144,14 +149,14 @@ class Permission implements PermissionInterface
 
     public function setUserOpen($url)
     {
-        if (! in_array($url, $this->userOpen)) {
+        if (!in_array($url, $this->userOpen)) {
             $this->userOpen[] = $url;
         }
     }
 
     public function setIgnore($url)
     {
-        if (! in_array($url, $this->ignore)) {
+        if (!in_array($url, $this->ignore)) {
             $this->ignore[] = $url;
         }
     }
@@ -174,7 +179,7 @@ class Permission implements PermissionInterface
 
     public function loadRoles($reload = false)
     {
-        if (! empty($this->authNode) && $reload == false) {
+        if (!empty($this->authNode) && $reload == false) {
             return $this->authNode;
         }
         #获取角色权限
@@ -215,7 +220,7 @@ class Permission implements PermissionInterface
                 foreach ($route_list as $route => $v) {
                     // 过滤掉脚手架页面配置方法
                     $callback = is_array($v) ? ($v[0]->callback) : $v->callback;
-                    if (! is_array($callback)) {
+                    if (!is_array($callback)) {
                         continue;
                     }
                     $route = is_string($route) ? rtrim($route) : rtrim($v[0]->route);
@@ -225,19 +230,19 @@ class Permission implements PermissionInterface
                     $OpenAll = false;
                     if (isset($metadata['_c'][ApiController::class])) {
                         $userOpenAll = $metadata['_c'][ApiController::class]->userOpen;
-                        $OpenAll = ! $metadata['_c'][ApiController::class]->security;
+                        $OpenAll = !$metadata['_c'][ApiController::class]->security;
                     }
                     if (isset($metadata['_c'][AdminController::class])) {
                         $userOpenAll = $metadata['_c'][AdminController::class]->userOpen;
-                        $OpenAll = ! $metadata['_c'][AdminController::class]->security;
+                        $OpenAll = !$metadata['_c'][AdminController::class]->security;
                     }
                     foreach ($metadata['_m'][$methodName] ?? [] as $item) {
-                        if (! $item instanceof Mapping) {
+                        if (!$item instanceof Mapping) {
                             continue;
                         }
                         if (property_exists($item, 'security') || $OpenAll) {
                             $security = $item->security;
-                            if (! $security || $OpenAll) {
+                            if (!$security || $OpenAll) {
                                 $url = "{$http_method}::{$route}";
                                 $this->setIgnore($url);
                             }
@@ -259,22 +264,22 @@ class Permission implements PermissionInterface
     {
         $allPermission = $this->cache->get($this->getKey());
         if ($allPermission !== null) {
-            return (array) $allPermission;
+            return (array)$allPermission;
         }
         $allPermission = [];
         #获取自身权限
-        $userPerminssion = $this->auth->user()->permissions()->get();
+        $userPerminssion = $this->guard->user()->permissions()->get();
         foreach ($userPerminssion as $item) {
             $allPermission = array_merge($allPermission, $item->getAttribute('path'));
         }
         $this->cache->set($this->getKey(), $allPermission);
-        return (array) $allPermission;
+        return (array)$allPermission;
     }
 
     protected function getKey($id = null)
     {
         if ($id === null) {
-            $id = $this->auth->user()->getId();
+            $id = $this->guard->user()->getId();
         }
         return self::$cacheName . $id;
     }
@@ -282,7 +287,7 @@ class Permission implements PermissionInterface
     protected function getRoleKey($id = null)
     {
         if ($id === null) {
-            $id = $this->auth->user()->getId();
+            $id = $this->guard->user()->getId();
         }
         return self::$cacheRoleName . $id;
     }
