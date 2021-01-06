@@ -15,6 +15,6 @@ if (! function_exists('permission')) {
      */
     function permission()
     {
-        return getContainer(\HPlus\Permission\Contracts\PermissionInterface::class);
+        return get_container(\HPlus\Permission\Contracts\PermissionInterface::class);
     }
 }

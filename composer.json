@@ -18,7 +18,8 @@
   "require": {
     "php": ">=7.3",
     "ext-swoole": ">=4.5",
-    "96qbhy/hyperf-auth": "^2.3"
+    "96qbhy/hyperf-auth": "^2.3",
+    "hyperf-plus/helper": "^2.0"
   },
   "require-dev": {
   },

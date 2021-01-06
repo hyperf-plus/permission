@@ -202,7 +202,7 @@ class Permission implements PermissionInterface
      */
     public function scanPermission()
     {
-        $DispatcherFactory = getContainer(DispatcherFactory::class);
+        $DispatcherFactory = get_container(DispatcherFactory::class);
         $list = $DispatcherFactory->getRouter('http');
         $this->ignore = [];
         $this->loadRoles(true);
