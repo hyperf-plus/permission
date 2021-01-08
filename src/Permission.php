@@ -20,6 +20,7 @@ use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\HttpServer\Annotation\Mapping;
 use Hyperf\HttpServer\Router\DispatcherFactory;
+use Hyperf\Utils\ApplicationContext;
 use Psr\SimpleCache\CacheInterface;
 use Qbhy\HyperfAuth\AuthManager;
 
@@ -202,7 +203,7 @@ class Permission implements PermissionInterface
      */
     public function scanPermission()
     {
-        $DispatcherFactory = get_container(DispatcherFactory::class);
+        $DispatcherFactory = ApplicationContext::getContainer()->get(DispatcherFactory::class);
         $list = $DispatcherFactory->getRouter('http');
         $this->ignore = [];
         $this->loadRoles(true);
