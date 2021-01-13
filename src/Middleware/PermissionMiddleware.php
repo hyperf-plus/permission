@@ -9,6 +9,7 @@ declare(strict_types=1);
  * @contact  4213509@qq.com
  * @license  https://github.com/hyperf/hyperf-plus/blob/master/LICENSE
  */
+
 namespace HPlus\Permission\Middleware;
 
 use HPlus\Permission\Contracts\PermissionInterface;
@@ -37,11 +38,22 @@ class PermissionMiddleware implements MiddlewareInterface
     {
         /** @var Dispatched $router */
         $router = $request->getAttribute(Dispatched::class);
-        if (! $router->isFound()) {
+        if (!$router->isFound()) {
             throw new NotFoundException('接口不存在');
         }
+
+        //因为导出数据是跳转的浏览器新窗口，所以头信息携带会丢失，这里需要用cookie来判断权限
+        if (strpos($request->getUri()->getQuery(), '_export_') !== false) {
+            Context::override(ServerRequestInterface::class, function (ServerRequestInterface $request) {
+                $token = $request->getCookieParams()[config('admin.auth.cookie_name', 'HPLUSSESSIONID')] ?? null;
+                return $request->withQueryParams([
+                    'token' => $token
+                ]);
+            });
+        }
+
         $has = $this->permission->can($request->getMethod(), $router->handler->route);
-        if (! $has) {
+        if (!$has) {
             throw new PermissionException(401, '您无权限');
         }
         return $handler->handle($request);
