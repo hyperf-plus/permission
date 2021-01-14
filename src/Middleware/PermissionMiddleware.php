@@ -41,10 +41,9 @@ class PermissionMiddleware implements MiddlewareInterface
         if (!$router->isFound()) {
             throw new NotFoundException('接口不存在');
         }
-
         //因为导出数据是跳转的浏览器新窗口，所以头信息携带会丢失，这里需要用cookie来判断权限
         if (strpos($request->getUri()->getQuery(), '_export_') !== false) {
-            Context::override(ServerRequestInterface::class, function (ServerRequestInterface $request) {
+            \Hyperf\Utils\Context::override(ServerRequestInterface::class, function (ServerRequestInterface $request) {
                 $token = $request->getCookieParams()[config('cookie_name', 'HPLUSSESSIONID')] ?? null;
                 return $request->withQueryParams(array_merge($request->getQueryParams(),[
                     'token' => $token
